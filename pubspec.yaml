@@ -1,0 +1,29 @@
+name: moto_log
+description: Offline-first motorcycle & scooter maintenance log with ODO-based reminders.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  path_provider: ^2.1.4
+  provider: ^6.1.2
+  intl: ^0.20.2
+  flutter_local_notifications: ^23.0.3
+  timezone: ^0.11.2
+  share_plus: ^13.3.1
+  file_picker: ^13.4.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+dependency_overrides:
+  path_provider_android: 2.2.17
