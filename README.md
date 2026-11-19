@@ -1,81 +1,82 @@
-# MotoLog — offline-first motorcycle maintenance tracker (Flutter)
+# MotoLog
 
-Built around a Honda Click 125i (PH) but works for any bike: reminders are fully editable.
+A simple, offline-first motorcycle maintenance and fuel tracker built with Flutter.
+Keep your service reminders, fuel fill-ups and mileage in one place, with no account and no signal needed.
 
-## Set up
+## Features
+
+- **Maintenance reminders**: track items like engine oil, brake pads and chain, by distance, by time, or both. Progress is based on your ODO, and the app tells you what's due soon or overdue.
+- **Smart due dates**: estimates when each item will be due from your riding pace, and sends a heads-up about a week before.
+- **Fuel tracking**: log liters and price per liter (the total is calculated for you), with ODO and TRIP B distance for accurate km/L.
+- **Stats**: average fuel economy, fuel cost per km, monthly spending for the last 6 months, and distance tracked.
+- **Multiple vehicles**: switch between bikes, each with its own history.
+- **Backup and restore**: export everything as a file and import it again later.
+- **Light and dark mode**: follow the system or pick one in Settings.
+- **Offline first**: data is saved locally on your device first.
+
+## How fuel economy works
+
+MotoLog keeps **ODO** and **TRIP B** separate.
+
+| | Used for |
+| --- | --- |
+| **ODO** (total mileage, never reset) | Maintenance schedules and distance tracked |
+| **TRIP B** (distance since last refill) | Fuel economy |
+
+Routine: refuel, log it, reset TRIP B to 0. At the next refill, enter the TRIP B distance before resetting it.
+
+```
+km/L = TRIP B distance / liters added
+```
+
+- The first fill-up is a baseline and has no km/L.
+- A km/L is only counted when this fill-up and the previous one were both filled to full.
+- ODO differences are never used for fuel economy.
+
+Example: 85 km on TRIP B and 3.2 L added gives 85 / 3.2 = 26.56 km/L.
+
+## Getting started
+
+Requirements: [Flutter](https://docs.flutter.dev/get-started/install) and the Android SDK (Android Studio).
 
 ```bash
-flutter create --org com.yourname --project-name moto_log moto_log
+git clone <your-repo-url>
 cd moto_log
-# copy this project's lib/, test/ and pubspec.yaml over the generated ones
-# (delete the generated test/widget_test.dart)
 flutter pub get
-flutter test          # runs the due-date engine tests
 flutter run
 ```
 
-### Android (needed for reminders)
+Pick a device or emulator when asked, or use `flutter run -d <device-id>`.
 
-`android/app/build.gradle.kts`
+To build an APK:
 
-```kotlin
-android {
-    compileOptions { isCoreLibraryDesugaringEnabled = true }
-}
-dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
-}
+```bash
+flutter build apk --release
 ```
 
-`android/app/src/main/AndroidManifest.xml`, inside `<manifest>`:
-
-```xml
-<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-<uses-permission android:name="android.permission.VIBRATE"/>
-```
-
-…and inside `<application>`:
-
-```xml
-<receiver android:exported="false"
-    android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"/>
-<receiver android:exported="false"
-    android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
-  <intent-filter>
-    <action android:name="android.intent.action.BOOT_COMPLETED"/>
-    <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
-    <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
-    <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
-  </intent-filter>
-</receiver>
-```
-
-## How reminders work
-
-Phones can't watch your odometer, so the app projects due dates instead:
-
-1. Each reminder has an interval in km, months, or both (whichever comes first wins).
-2. You enter the ODO it was last done at (setup screen, or later from the Reminders tab).
-3. Every ODO update teaches the app your real riding pace (km/day, last 90 days).
-4. After each update or service log, it re-plans local notifications: a heads-up ~7 days before the projected due date, weekly nudges once overdue, and a Sunday "update your ODO" check-in.
-
-## Structure
+## Project structure
 
 ```
 lib/
-  main.dart                 app entry, onboarding vs. main shell
-  models.dart               data classes + computeDue() (the due-date engine)
-  templates.dart            Click 125i schedule from the owner's manual (pp. 58-59, 119)
-  db.dart                   local JSON-file storage + backup restore
-  app_state.dart            state, stats, notification planning, backup export
-  notification_service.dart all flutter_local_notifications code (one file to fix on upgrade)
-  sync_service.dart         plug-in point for cloud sync (currently local-only)
-  screens/                  home, reminders, history, stats, settings, onboarding
-  widgets/                  shared UI + bottom-sheet forms
+  main.dart                  App entry and theme
+  app_state.dart             State, fuel and stats logic
+  models.dart                Vehicle, service item, log and fuel models, due-date engine
+  db.dart                    Local JSON storage
+  notification_service.dart  Local notifications (all plugin code lives here)
+  theme.dart                 Light and dark themes
+  screens/                   Home, maintenance, logs, stats, settings, onboarding
+  widgets/                   Shared widgets and bottom sheets
+android/                     Android config, app icon, splash and notification icons
 ```
 
-## Not done yet
+## Data and privacy
 
-- Cloud sync / multi-device (interface exists, no backend wired)
-- iOS foreground-notification setup (see flutter_local_notifications docs)
+Everything is stored in a single JSON file in the app's private storage on your device.
+Nothing is uploaded anywhere. Use **Settings > Export backup** to save a copy.
+
+## Built with
+
+- [Flutter](https://flutter.dev)
+- [provider](https://pub.dev/packages/provider) for state
+- [flutter_local_notifications](https://pub.dev/packages/flutter_local_notifications) for reminders
+- [file_picker](https://pub.dev/packages/file_picker) and [share_plus](https://pub.dev/packages/share_plus) for backups
